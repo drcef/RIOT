@@ -98,6 +98,8 @@ typedef enum {
                                  *   as type gnrc_nettype_t. */
     NETOPT_STATE,               /**< get/set the state of network devices as
                                  *   type netopt_state_t */
+    NETOPT_CCA_STATE,           /**< get the state of a CCA check, setting
+                                 *   this initiates a CCA check */
     NETOPT_RAWMODE,             /**< en/disable the pre-processing of data
                                  *   in a network device driver as type
                                  *   gnrc_nettype_t */
@@ -277,8 +279,14 @@ typedef enum {
                                  *   transmitting a packet */
     NETOPT_STATE_RESET,         /**< triggers a hardware reset. The resulting
                                  *   state of the network device is @ref NETOPT_STATE_IDLE */
+    NETOPT_STATE_IDLE_BASIC,
     /* add other states if needed */
 } netopt_state_t;
+
+typedef enum {
+    NETOPT_CCA_STATE_CLEAR = 0,
+    NETOPT_CCA_STATE_BUSY,
+} netopt_cca_state_t;
 
 /**
  * @brief   Option parameter to be used with @ref NETOPT_RF_TESTMODE

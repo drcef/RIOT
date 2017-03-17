@@ -27,6 +27,7 @@
 #include "at86rf2xx_internal.h"
 #include "at86rf2xx_registers.h"
 #include "periph/spi.h"
+#include "xtimer.h"
 
 #define ENABLE_DEBUG (0)
 #include "debug.h"
@@ -416,6 +417,26 @@ void at86rf2xx_set_option(at86rf2xx_t *dev, uint16_t option, bool state)
                 break;
         }
     }
+}
+
+uint8_t at86rf2xx_do_cca(at86rf2xx_t *dev)
+{
+    // initiate the CCA measurement
+    uint8_t tmp = at86rf2xx_reg_read(dev, AT86RF2XX_REG__PHY_CC_CCA);
+    tmp |= AT86RF2XX_PHY_CC_CCA_MASK__CCA_REQUEST;
+    at86rf2xx_reg_write(dev, AT86RF2XX_REG__PHY_CC_CCA, tmp);
+
+    // wait 135 us, the standard measurement & processing delay
+    xtimer_usleep(135); // todo put 135 in a define
+
+    // poll till it's done (CCA_DONE bit is 1 in TRX_STATUS register)
+    uint8_t trx_status;
+    do {
+        trx_status = at86rf2xx_reg_read(dev, AT86RF2XX_REG__TRX_STATUS);
+    } while (!(trx_status & AT86RF2XX_TRX_STATUS_MASK__CCA_DONE));
+
+    // get result from CCA_STATUS bit in TRX_STATUS register
+    return trx_status & AT86RF2XX_TRX_STATUS_MASK__CCA_STATUS;
 }
 
 /**

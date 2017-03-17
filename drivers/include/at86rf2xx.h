@@ -96,6 +96,7 @@ extern "C" {
  * @{
  */
 #define AT86RF2XX_STATE_FORCE_TRX_OFF  (0x03)     /**< force transition to idle */
+#define AT86RF2XX_STATE_RX_ON          (0x06)     /**< basic receive mode */
 #define AT86RF2XX_STATE_TRX_OFF        (0x08)     /**< idle */
 #define AT86RF2XX_STATE_PLL_ON         (0x09)     /**< ready to transmit */
 #define AT86RF2XX_STATE_SLEEP          (0x0f)     /**< sleep mode */

@@ -192,6 +192,9 @@ static int _set_state(at86rf2xx_t *dev, netopt_state_t state)
         case NETOPT_STATE_IDLE:
             at86rf2xx_set_state(dev, AT86RF2XX_STATE_RX_AACK_ON);
             break;
+        case NETOPT_STATE_IDLE_BASIC:
+            at86rf2xx_set_state(dev, AT86RF2XX_STATE_RX_ON);
+            break;
         case NETOPT_STATE_TX:
             if (dev->netdev.flags & AT86RF2XX_OPT_PRELOADING) {
                 at86rf2xx_tx_exec(dev);
@@ -216,6 +219,8 @@ netopt_state_t _get_state(at86rf2xx_t *dev)
         case AT86RF2XX_STATE_BUSY_TX_ARET:
         case AT86RF2XX_STATE_TX_ARET_ON:
             return NETOPT_STATE_TX;
+        case AT86RF2XX_STATE_RX_ON:
+            return NETOPT_STATE_IDLE_BASIC;
         case AT86RF2XX_STATE_RX_AACK_ON:
         default:
             return NETOPT_STATE_IDLE;
@@ -247,6 +252,16 @@ static int _get(netdev2_t *netdev, netopt_t opt, void *val, size_t max_len)
             assert(max_len >= sizeof(netopt_state_t));
             *((netopt_state_t *)val) = _get_state(dev);
             return sizeof(netopt_state_t);
+
+        case NETOPT_CCA_STATE:
+            assert(max_len >= sizeof(netopt_cca_state_t));
+            if (at86rf2xx_do_cca(dev)) {
+                *((netopt_cca_state_t *)val) = NETOPT_CCA_STATE_CLEAR;
+            }
+            else {
+                *((netopt_cca_state_t *)val) = NETOPT_CCA_STATE_BUSY;
+            }
+            return sizeof(netopt_cca_state_t);
 
         case NETOPT_PRELOADING:
             if (dev->netdev.flags & AT86RF2XX_OPT_PRELOADING) {
@@ -424,7 +439,6 @@ static int _set(netdev2_t *netdev, netopt_t opt, void *val, size_t len)
             assert(len <= sizeof(netopt_state_t));
             res = _set_state(dev, *((netopt_state_t *)val));
             break;
-
         case NETOPT_AUTOACK:
             at86rf2xx_set_option(dev, AT86RF2XX_OPT_AUTOACK,
                                  ((bool *)val)[0]);
