@@ -199,3 +199,7 @@ ifneq (,$(filter xbee,$(USEMODULE)))
   USEMODULE += xtimer
   USEMODULE += netif
 endif
+
+ifneq (,$(filter pca9554,$(USEMODULE)))
+  FEATURES_REQUIRED += periph_i2c
+endif
