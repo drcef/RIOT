@@ -166,8 +166,8 @@ static uint16_t cmd_r_addr(enc28j60_t *dev, uint8_t addr)
 
 static void cmd_w_addr(enc28j60_t *dev, uint8_t addr, uint16_t val)
 {
-    cmd_wcr(dev, addr, 0, (val & 0xff));
-    cmd_wcr(dev, addr + 1, 0, (val >> 8));
+    cmd_wcr(dev, addr, 0, (uint8_t)(val & 0xff));
+    cmd_wcr(dev, addr + 1, 0, (uint8_t)(val >> 8));
 }
 
 static uint16_t cmd_r_phy(enc28j60_t *dev, uint8_t reg)
@@ -279,28 +279,71 @@ static int nd_recv(netdev_t *netdev, void *buf, size_t max_len, void *info)
     (void)info;
     mutex_lock(&dev->devlock);
 
+    /* 
+     * read RX read address
+     * somehow the value is read wrong sometimes
+     * really odd I know
+     * so we read twice for confirmation
+     */
+    uint16_t rx_read_address;
+    uint16_t rx_read_address_confirm;
+    do {
+        rx_read_address = cmd_r_addr(dev, ADDR_RX_READ);
+        rx_read_address_confirm = cmd_r_addr(dev, ADDR_RX_READ);
+        DEBUG("[enc28j60] recv: RX read addr = 0x%04x\n", rx_read_address);
+    } while (rx_read_address != rx_read_address_confirm);
+    
+
     /* set read pointer to RX read address */
-    cmd_w_addr(dev, ADDR_READ_PTR, cmd_r_addr(dev, ADDR_RX_READ));
+    cmd_w_addr(dev, ADDR_READ_PTR, rx_read_address);
     /* read packet header */
     cmd_rbm(dev, head, 6);
     /* TODO: care for endianess */
     next = (uint16_t)((head[1] << 8) | head[0]);
-    size = (size_t)((head[3] << 8) | head[2]) - 4;  /* discard CRC */
 
-    if (buf != NULL) {
+    size = (size_t)(0xFF & ((head[3] << 8) | head[2]));  
+    /* discard CRC (make sure size doesn't underflow) */
+    if (size >= 4) size -= 4;
+    
+
+    DEBUG("[enc28j60] recv: packet size: %u, status %02x %02x\n", size, head[5], head[4]);
+
+
+    /* ---- FIX ----
+     * Sometimes this may be called with a NULL buffer given
+     * if we desire to drop the received packet. Netdev2 does
+     * this when it can't allocate a pktsnip for the received
+     * packet, but still wants to clear it from the enc28j60
+     * RX buffer. Make sure to accommodate this behaviour.
+     */
+
+    if (max_len > 0) {
+        if (buf != NULL) {
+            /* read packet content into the supplied buffer */
+            if (size <= max_len) {
+                cmd_rbm(dev, (uint8_t *)buf, size);
 #ifdef MODULE_NETSTATS_L2
-        netdev->stats.rx_count++;
-        netdev->stats.rx_bytes += size;
+                netdev->stats.rx_count++;
+                netdev->stats.rx_bytes += size;
 #endif
-        /* read packet content into the supplied buffer */
-        if (size <= max_len) {
-            cmd_rbm(dev, (uint8_t *)buf, size);
-        } else {
-            DEBUG("[enc28j60] recv: unable to get packet - buffer too small\n");
-            size = 0;
+            } else {
+                DEBUG("[enc28j60] recv: unable to get packet - buffer too small\n");
+                size = 0;
+            }
         }
-        /* release memory */
-        cmd_w_addr(dev, ADDR_RX_READ, next);
+
+        /* 
+         * release memory
+         * Here I need to make sure that the next address is written properly
+         * Sometimes cmd_w_addr() writes the wrong thing!!!
+         * So I read it back to confirm it matches
+         */
+        uint16_t written_next_address;
+        do {
+            cmd_w_addr(dev, ADDR_RX_READ, next);
+            written_next_address = cmd_r_addr(dev, ADDR_RX_READ);
+            DEBUG("[enc28j60] recv: written next RX read addr = 0x%04x\n", next);
+        } while (written_next_address != next);
         cmd_bfs(dev, REG_ECON2, -1, ECON2_PKTDEC);
     }
 
