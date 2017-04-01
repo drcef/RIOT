@@ -203,3 +203,8 @@ endif
 ifneq (,$(filter pca9554,$(USEMODULE)))
   FEATURES_REQUIRED += periph_i2c
 endif
+
+ifneq (,$(filter mcp9808,$(USEMODULE)))
+  FEATURES_REQUIRED += periph_i2c
+endif
+
