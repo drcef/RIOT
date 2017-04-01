@@ -112,3 +112,6 @@ endif
 ifneq (,$(filter mcp9808,$(USEMODULE)))
     USEMODULE_INCLUDES += $(RIOTBASE)/drivers/mcp9808/include
 endif
+ifneq (,$(filter si114x,$(USEMODULE)))
+    USEMODULE_INCLUDES += $(RIOTBASE)/drivers/si114x/include
+endif
