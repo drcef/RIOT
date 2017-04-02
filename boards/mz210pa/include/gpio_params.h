@@ -13,11 +13,7 @@ extern "C" {
  */
 static const  saul_gpio_params_t saul_gpio_params[] =
 {
-    {
-        .name = "Button(SW0)",
-        .pin = BUTTON_GPIO,
-        .mode = GPIO_IN_PU
-    },
+    
 };
 
 #ifdef __cplusplus

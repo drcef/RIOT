@@ -29,28 +29,6 @@ extern "C" {
                                      .sleep_pin = GPIO_PIN(PA, 20), \
                                      .reset_pin = GPIO_PIN(PB, 15)}
 
-/**
- * @brief   LED pin definitions and handlers
- * @{
- */
-#define LED0_PIN            GPIO_PIN(0, 7)
-
-#define LED_PORT            PORT->Group[0]
-#define LED0_MASK           (1 << 7)
-
-#define LED0_ON             (LED_PORT.OUTCLR.reg = LED0_MASK)
-#define LED0_OFF            (LED_PORT.OUTSET.reg = LED0_MASK)
-#define LED0_TOGGLE         (LED_PORT.OUTTGL.reg = LED0_MASK)
-/** @} */
-
-/**
- * @name SW0 (Button) pin definitions
- * @{
- */
-#define BUTTON_PORT         PORT->Group[0]
-#define BUTTON_PIN          (28)
-#define BUTTON_GPIO         GPIO_PIN(0, BUTTON_PIN)
-/** @} */
 
 /**
  * @brief Initialize board specific hardware, including clock, LEDs and std-IO
