@@ -62,10 +62,11 @@ typedef enum {
 #if defined(CPU_FAM_STM32L0)
     AHB,            /**< AHB bus */
     IOP,            /**< IOP bus */
-#elif defined(CPU_FAM_STM32L1) || defined(CPU_FAM_STM32F1)\
+#elif defined(CPU_FAM_STM32L1) || defined(CPU_FAM_STM32F1) \
     || defined(CPU_FAM_STM32F0) || defined(CPU_FAM_STM32F3)
     AHB,            /**< AHB bus */
-#elif defined(CPU_FAM_STM32F2) || defined(CPU_FAM_STM32F4)
+#elif defined(CPU_FAM_STM32F2) || defined(CPU_FAM_STM32F4) \
+    || defined(CPU_FAM_STM32L4)
     AHB1,           /**< AHB1 bus */
     AHB2,           /**< AHB2 bus */
     AHB3            /**< AHB3 bus */
@@ -228,6 +229,14 @@ typedef struct {
 #if 0 /* TODO */
     uint8_t dma_stream;     /**< DMA stream used for TX */
     uint8_t dma_chan;       /**< DMA channel used for TX */
+#endif
+#ifdef UART_USE_HW_FC
+    gpio_t cts_pin;         /**< CTS pin - set to GPIO_UNDEF when not using HW flow control */
+    gpio_t rts_pin;         /**< RTS pin */
+#ifndef CPU_FAM_STM32F1
+    gpio_af_t cts_af;       /**< alternate function for CTS pin */
+    gpio_af_t rts_af;       /**< alternate function for RTS pin */
+#endif
 #endif
 } uart_conf_t;
 

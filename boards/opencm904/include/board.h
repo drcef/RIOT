@@ -26,13 +26,6 @@ extern "C" {
 #endif
 
 /**
- * @name Define the location of the RIOT image in flash
- * @{
- */
-#define LOCATION_VTABLE     (0x08003000)
-/** @} */
-
-/**
  * @name xtimer configuration
  * @{
  */
@@ -72,6 +65,15 @@ extern "C" {
  * @brief Use the USART2 for STDIO on this board
  */
 #define UART_STDIO_DEV      UART_DEV(0)
+
+/**
+ * @brief Override with ROBOTIS Bluetooth antenna baudrate for STDIO
+ * @{
+ */
+#ifndef UART_STDIO_BAUDRATE
+#define UART_STDIO_BAUDRATE (921600UL)
+#endif
+/** @} */
 
 /**
  * @brief   Initialize board specific hardware, including clock, LEDs and std-IO

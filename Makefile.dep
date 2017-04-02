@@ -350,6 +350,10 @@ ifneq (,$(filter gnrc_pktdump,$(USEMODULE)))
   USEMODULE += od
 endif
 
+ifneq (,$(filter od,$(USEMODULE)))
+  USEMODULE += fmt
+endif
+
 ifneq (,$(filter newlib_nano,$(USEMODULE)))
   USEMODULE += newlib
 endif
@@ -609,6 +613,17 @@ ifneq (,$(filter vfs,$(USEMODULE)))
     ifeq (native, $(BOARD))
         USEMODULE += native_vfs
     endif
+endif
+
+ifneq (,$(filter sock_dns,$(USEMODULE)))
+  USEMODULE += sock_util
+endif
+
+ifneq (,$(filter spiffs,$(USEMODULE)))
+    USEPKG += spiffs
+    USEMODULE += vfs
+    USEMODULE += spiffs_fs
+    USEMODULE += mtd
 endif
 
 # include package dependencies
