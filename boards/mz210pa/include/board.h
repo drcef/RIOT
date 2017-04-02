@@ -4,6 +4,7 @@
 #include "cpu.h"
 #include "periph_conf.h"
 #include "periph_cpu.h"
+#include "div.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,8 +14,11 @@ extern "C" {
  * @brief   xtimer configuration
  * @{
  */
-#define XTIMER_DEV          TIMER_1
-#define XTIMER_CHAN         (0)
+#define XTIMER_DEV                     TIMER_RTT
+#define XTIMER_CHAN                    (0)
+#define XTIMER_HZ                      32768UL
+#define XTIMER_USEC_TO_TICKS(value)    ( div_u32_by_15625div512(value) )
+#define XTIMER_TICKS_TO_USEC(value)    ( ((uint64_t)value * 15625)>>9 )
 /** @} */
 
 /**

@@ -41,7 +41,8 @@ extern "C" {
  *
  * @{
  */
-#define CLOCK_USE_PLL       (1)
+#define CLOCK_USE_PLL       (0)
+#define CLOCK_USE_FLL       (1)
 
 #if CLOCK_USE_PLL
 /* edit these values to adjust the PLL output frequency */
@@ -49,21 +50,23 @@ extern "C" {
 #define CLOCK_PLL_DIV       (1U)                /* adjust to your needs */
 /* generate the actual used core clock frequency */
 #define CLOCK_CORECLOCK     (((CLOCK_PLL_MUL + 1) * 1000000U) / CLOCK_PLL_DIV)
+#elif CLOCK_USE_FLL
+#define CLOCK_CORECLOCK     48000000U
 #else
-/* edit this value to your needs */
-#define CLOCK_DIV           (1U)
-/* generate the actual core clock frequency */
-#define CLOCK_CORECLOCK     (8000000 / CLOCK_DIV)
+#define CLOCK_CORECLOCK     32768U
 #endif
 /** @} */
+
+#define PM_BLOCKER_INITIAL { .val_u32=0x00000000 }
 
 /**
  * @name Timer peripheral configuration
  * @{
  */
-#define TIMER_NUMOF         (2U)
-#define TIMER_0_EN          1
-#define TIMER_1_EN          1
+#define TIMER_NUMOF         (1U)
+#define TIMER_0_EN          0
+#define TIMER_1_EN          0
+#define TIMER_RTT_EN        1
 
 /* Timer 0 configuration */
 #define TIMER_0_DEV         TC3->COUNT16
