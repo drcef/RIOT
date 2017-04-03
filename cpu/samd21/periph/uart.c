@@ -77,7 +77,7 @@ static int init_base(uart_t uart, uint32_t baudrate)
     /* enable sync and async clocks */
     uart_poweron(uart);
     /* configure pins */
-    gpio_init(uart_config[uart].rx_pin, GPIO_IN);
+    gpio_init(uart_config[uart].rx_pin, GPIO_IN_PU);
     gpio_init_mux(uart_config[uart].rx_pin, uart_config[uart].mux);
     gpio_init(uart_config[uart].tx_pin, GPIO_OUT);
     gpio_init_mux(uart_config[uart].tx_pin, uart_config[uart].mux);
