@@ -57,32 +57,7 @@ void rtt_init(void)
     /* Turn on power manager for RTC */
     PM->APBAMASK.reg |= PM_APBAMASK_RTC;
 
-    /* RTC uses External 32,768KHz Oscillator because OSC32K isn't accurate
-     * enough (p1075/1138). Also keep running in standby. */
-    SYSCTRL->XOSC32K.reg =  SYSCTRL_XOSC32K_ONDEMAND |
-                            SYSCTRL_XOSC32K_EN32K |
-                            SYSCTRL_XOSC32K_XTALEN |
-                            SYSCTRL_XOSC32K_STARTUP(6) |
-#if RTT_RUNSTDBY
-                            SYSCTRL_XOSC32K_RUNSTDBY |
-#endif
-                            SYSCTRL_XOSC32K_ENABLE;
-
-    /* Setup clock GCLK2 with divider 1 */
-    GCLK->GENDIV.reg = GCLK_GENDIV_ID(2) | GCLK_GENDIV_DIV(1);
-    while (GCLK->STATUS.bit.SYNCBUSY) {}
-
-    /* Enable GCLK2 with XOSC32K as source. Use divider without modification
-     * and keep running in standby. */
-    GCLK->GENCTRL.reg = GCLK_GENCTRL_ID(2) |
-                        GCLK_GENCTRL_GENEN |
-#if RTT_RUNSTDBY
-                        GCLK_GENCTRL_RUNSTDBY |
-#endif
-                        GCLK_GENCTRL_SRC_XOSC32K;
-    while (GCLK->STATUS.bit.SYNCBUSY) {}
-
-    /* Connect GCLK2 to RTC */
+    /* Connect GCLK2 (clocked by OSCULP32K by default) to RTC */
     GCLK->CLKCTRL.reg = GCLK_CLKCTRL_GEN_GCLK2 |
                         GCLK_CLKCTRL_CLKEN |
                         GCLK_CLKCTRL_ID(RTC_GCLK_ID);
