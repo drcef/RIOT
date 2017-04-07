@@ -91,7 +91,7 @@ ipv6_addr_t *gnrc_ndp_internal_default_router(void)
 void gnrc_ndp_internal_set_state(gnrc_ipv6_nc_t *nc_entry, uint8_t state)
 {
     gnrc_ipv6_netif_t *ipv6_iface;
-    uint32_t t = GNRC_NDP_FIRST_PROBE_DELAY * US_PER_SEC;
+    uint32_t t = 1000;
 
     nc_entry->flags &= ~GNRC_IPV6_NC_STATE_MASK;
     nc_entry->flags |= state;
