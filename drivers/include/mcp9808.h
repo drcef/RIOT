@@ -30,11 +30,11 @@ extern "C" {
 #endif
 
 #ifndef MCP9808_I2C_ADDRESS
-#define MCP9808_I2C_ADDRESS     0x18
+#define MCP9808_I2C_ADDRESS     0x19
 #endif
 
-#define MCP9808_MANUF_ID        0x0054
-#define MCP9808_DEV_ID          0x0400
+#define MCP9808_MANUF_ID        0x54
+#define MCP9808_DEV_ID          0x04
 
 enum {
     MCP9808_OK          =  0,       /**< everything was fine */
