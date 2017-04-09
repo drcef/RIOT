@@ -126,7 +126,7 @@ extern "C" {
  * @brief   Time in mircoseconds between retransmissions of neighbor
  *          solicitations to a neighbor.
  */
-#define GNRC_NDP_RETRANS_TIMER          (1U * US_PER_SEC)
+#define GNRC_NDP_RETRANS_TIMER          (100U * US_PER_MS)
 
 /**
  * @brief   Delay in seconds for neighbor cache entry between entering
