@@ -221,6 +221,33 @@ static const spi_conf_t spi_config[] = {
 /** @} */
 
 /**
+ * @name I2C configuration
+  * @{
+ */
+#define I2C_0_EN            1
+#define I2C_1_EN            1
+#define I2C_NUMOF           (I2C_0_EN + I2C_1_EN)
+#define I2C_IRQ_PRIO        1
+#define I2C_APBCLK          (CLOCK_APB1)
+
+/* I2C 0 device configuration */
+#define I2C_0_EVT_ISR       isr_i2c1_ev
+#define I2C_0_ERR_ISR       isr_i2c1_er
+
+/* I2C 1 device configuration */
+#define I2C_1_EVT_ISR       isr_i2c2_ev
+#define I2C_1_ERR_ISR       isr_i2c2_er
+
+static const i2c_conf_t i2c_config[] = {
+    /* device, port, scl-, sda-pin-number, I2C-AF, ER-IRQn, EV-IRQn */
+    {I2C1, GPIO_PIN(PORT_B,  8), GPIO_PIN(PORT_B,  9), GPIO_OD_PU,
+     GPIO_AF4, I2C1_ER_IRQn, I2C1_EV_IRQn},
+    {I2C2, GPIO_PIN(PORT_B, 10), GPIO_PIN(PORT_B, 11), GPIO_OD_PU,
+     GPIO_AF4, I2C2_ER_IRQn, I2C2_EV_IRQn},
+};
+/** @} */
+
+/**
  * @name    ADC configuration
  * @{
  */
