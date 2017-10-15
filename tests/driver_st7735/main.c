@@ -129,15 +129,6 @@ int main(void)
         }
 
         xtimer_usleep(500 * 1000U);
-
-        for (i=0; i<5; i++) {
-            st7735_invert_display(&dev, true);
-            xtimer_usleep(100 * 1000U);
-            st7735_invert_display(&dev, false);
-            xtimer_usleep(100 * 1000U);
-        }
-        
-        xtimer_usleep(500 * 1000U);
     }
 
     return 0;

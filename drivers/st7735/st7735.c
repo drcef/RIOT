@@ -384,6 +384,7 @@ void st7735_set_addr_window(const st7735_t *dev, uint8_t x0, uint8_t y0, uint8_t
      * This function is called at the beginning of every draw operation, so
      * it is worth optimizing. The following code is 70% faster than using
      * a series of _writecommand() and _writedata().
+     */
 
     /* Endianness mindfuck ahead. Proceed with caution. */
 
@@ -413,6 +414,7 @@ void st7735_set_addr_window(const st7735_t *dev, uint8_t x0, uint8_t y0, uint8_t
 
 void st7735_push_color(const st7735_t *dev, uint16_t color, uint16_t pixelcount)
 {
+    color = (color >> 8) | (color << 8); // swap endianness
     const uint32_t val = (color << 16) | color;
     uint16_t bytecount = pixelcount * 2;
     uint16_t opcount = pixelcount / 2;
