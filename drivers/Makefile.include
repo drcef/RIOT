@@ -145,3 +145,6 @@ endif
 ifneq (,$(filter apa102,$(USEMODULE)))
   USEMODULE_INCLUDES += $(RIOTBASE)/drivers/apa102/include
 endif
+ifneq (,$(filter ssd1306,$(USEMODULE)))
+  USEMODULE_INCLUDES += $(RIOTBASE)/drivers/ssd1306/include
+endif
