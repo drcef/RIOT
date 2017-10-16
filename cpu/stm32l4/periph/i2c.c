@@ -147,27 +147,59 @@ static void _i2c_transfer_config(I2C_TypeDef *i2c, uint8_t address, uint8_t leng
     i2c->CR2 = tmpreg;
 }
 
-static uint8_t _wait_for_stop(I2C_TypeDef *i2c)
+static inline void _clear_cr2(I2C_TypeDef *i2c)
 {
-    /* wait until STOPF flag is set while checking if Not Acknowledge was raised */
-    uint8_t status = I2C_STATUS_OK;
-    while (!(i2c->ISR & I2C_ISR_STOPF)) {
-        if (i2c->ISR & I2C_ISR_NACKF) {
-            status = I2C_STATUS_ERROR;
-        }
-    }
-    if (status == I2C_STATUS_ERROR) {
+    i2c->CR2 &= (uint32_t)~((uint32_t)(I2C_CR2_SADD | I2C_CR2_HEAD10R | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_RD_WRN));
+}
+
+static uint8_t _check_ack_status(I2C_TypeDef *i2c)
+{
+    if (i2c->ISR & I2C_ISR_NACKF) {
+        /* wait until STOP flag is raised */
+        /* autoend should be initiate after ack fail */
+        while (!(i2c->ISR & I2C_ISR_STOPF)) {}
         /* clear NACK flag */
         i2c->ICR = I2C_ICR_NACKCF;
+        /* clear STOPF flag */
+        i2c->ICR = I2C_ICR_STOPCF;
         /* flush TXDR */
         if (i2c->ISR & I2C_ISR_TXIS) i2c->TXDR = 0x00; /* write dummy byte if transmit pending */
         if (!(i2c->ISR & I2C_ISR_TXE)) i2c->ISR |= I2C_ISR_TXE; /* flush pending byte if TXDR not empty */
+        /* clear configuration register 2 */
+        _clear_cr2(i2c);
+        return I2C_STATUS_ERROR;
     }
+    return I2C_STATUS_OK;
+}
 
-    /* clear STOPF flag */
-    i2c->ICR = I2C_ICR_STOPCF;
+static inline uint8_t _wait_for_stop(I2C_TypeDef *i2c)
+{
+    while (!(i2c->ISR & I2C_ISR_STOPF)) {
+        if (_check_ack_status(i2c) != I2C_STATUS_OK) {
+            return I2C_STATUS_ERROR;
+        }
+    }
+    return I2C_STATUS_OK;
+}
 
-    return status;
+static inline uint8_t _wait_for_txis(I2C_TypeDef *i2c)
+{
+    while (!(i2c->ISR & I2C_ISR_TXIS)) {
+        if (_check_ack_status(i2c) != I2C_STATUS_OK) {
+            return I2C_STATUS_ERROR;
+        }
+    }
+    return I2C_STATUS_OK;
+}
+
+static inline uint8_t _wait_for_rxne(I2C_TypeDef *i2c)
+{
+    while (!(i2c->ISR & I2C_ISR_RXNE)) {
+        if (_check_ack_status(i2c) != I2C_STATUS_OK) {
+            return I2C_STATUS_ERROR;
+        }
+    }
+    return I2C_STATUS_OK;
 }
 
 int i2c_acquire(i2c_t dev)
@@ -223,7 +255,9 @@ int i2c_read_bytes(i2c_t dev, uint8_t address, void *data, int length)
     /* receive data */
     while (xfer_count > 0) {
         /* wait until RXNE flag is set (means a byte was received) */
-        while (!(i2c->ISR & I2C_ISR_RXNE)) {}
+        if (_wait_for_rxne(i2c) != I2C_STATUS_OK) {
+            return -2;
+        }
         /* read data from RXDR */
         *(xfer_ptr++) = i2c->RXDR;
         xfer_size--;
@@ -244,12 +278,15 @@ int i2c_read_bytes(i2c_t dev, uint8_t address, void *data, int length)
     }
 
     /* no need to check TC flag for completion, in AUTOEND mode the stop is auto generated */
-    if (_wait_for_stop(i2c) == I2C_STATUS_ERROR) {
-        length = 0;
+    if (_wait_for_stop(i2c) != I2C_STATUS_OK) {
+        return -2;
     }
 
+    /* clear STOPF flag */
+    i2c->ICR = I2C_ICR_STOPCF;
+
     /* clear CR2 register */
-    i2c->CR2 &= (uint32_t)~((uint32_t)(I2C_CR2_SADD | I2C_CR2_HEAD10R | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_RD_WRN));
+    _clear_cr2(i2c);
 
     return length;
 }
@@ -276,7 +313,9 @@ int i2c_read_regs(i2c_t dev, uint8_t address, uint8_t reg, void *data, int lengt
     /* init write */
     _i2c_transfer_config(i2c, address, 1, I2C_SOFTEND_MODE, I2C_GENERATE_START_WRITE);
     /* wait until TXIS flag is set (means ready to send) */
-    while (i2c->ISR & I2C_ISR_TXIS) {}
+    if (_wait_for_txis(i2c) != I2C_STATUS_OK) {
+        return -2;
+    }
     /* write reg address */
     i2c->TXDR = reg;
     /* wait until TC flag is set */
@@ -295,7 +334,9 @@ int i2c_read_regs(i2c_t dev, uint8_t address, uint8_t reg, void *data, int lengt
 
     do {
         /* wait until RXNE flag is set (means a byte was received) */
-        while (!(i2c->ISR & I2C_ISR_RXNE)) {}
+        if (_wait_for_rxne(i2c) != I2C_STATUS_OK) {
+            return -2;
+        }
         /* read data from RXDR */
         *(xfer_ptr++) = i2c->RXDR;
         xfer_size--;
@@ -316,12 +357,15 @@ int i2c_read_regs(i2c_t dev, uint8_t address, uint8_t reg, void *data, int lengt
     } while (xfer_count > 0);
 
     /* no need to check TC flag for completion, in AUTOEND mode the stop is auto generated */
-    if (_wait_for_stop(i2c) == I2C_STATUS_ERROR) {
-        length = 0;
+    if (_wait_for_stop(i2c) != I2C_STATUS_OK) {
+        return -2;
     }
 
+    /* clear STOPF flag */
+    i2c->ICR = I2C_ICR_STOPCF;
+
     /* clear CR2 register */
-    i2c->CR2 &= (uint32_t)~((uint32_t)(I2C_CR2_SADD | I2C_CR2_HEAD10R | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_RD_WRN));
+    _clear_cr2(i2c);
 
     return length;
 }
@@ -359,7 +403,9 @@ int i2c_write_bytes(i2c_t dev, uint8_t address, const void *data, int length)
 
     while (xfer_count > 0) {
         /* wait until TXIS flag is set (means ready to send) */
-        while (i2c->ISR & I2C_ISR_TXIS) {}
+        if (_wait_for_txis(i2c) != I2C_STATUS_OK) {
+            return -2;
+        }
         /* write data to TXDR */
         i2c->TXDR = *(xfer_ptr++);
         xfer_count--;
@@ -380,12 +426,15 @@ int i2c_write_bytes(i2c_t dev, uint8_t address, const void *data, int length)
     }
 
     /* no need to check TC flag for completion, in AUTOEND mode the stop is auto generated */
-    if (_wait_for_stop(i2c) == I2C_STATUS_ERROR) {
-        length = 0;
+    if (_wait_for_stop(i2c) != I2C_STATUS_OK) {
+        return -2;
     }
 
+    /* clear STOPF flag */
+    i2c->ICR = I2C_ICR_STOPCF;
+
     /* clear CR2 register */
-    i2c->CR2 &= (uint32_t)~((uint32_t)(I2C_CR2_SADD | I2C_CR2_HEAD10R | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_RD_WRN));
+    _clear_cr2(i2c);
 
     return length;
 }
@@ -400,7 +449,6 @@ int i2c_write_regs(i2c_t dev, uint8_t address, uint8_t reg, const void *data, in
     int xfer_count = length;
     int xfer_size;
     uint8_t *xfer_ptr = data;
-    uint8_t error;
 
     if ((unsigned int)dev >= I2C_NUMOF) {
         return -1;
@@ -414,7 +462,9 @@ int i2c_write_regs(i2c_t dev, uint8_t address, uint8_t reg, const void *data, in
     /* send slave address+START and register address */
     _i2c_transfer_config(i2c, address, 1, I2C_RELOAD_MODE, I2C_GENERATE_START_WRITE);
     /* wait until TXIS flag is set (means ready to send) */
-    while (i2c->ISR & I2C_ISR_TXIS) {}
+    if (_wait_for_txis(i2c) != I2C_STATUS_OK) {
+        return -2;
+    }
     /* write reg address */
     i2c->TXDR = reg;
     /* wait until TCR (transfer complete reload) flag is set */
@@ -433,7 +483,9 @@ int i2c_write_regs(i2c_t dev, uint8_t address, uint8_t reg, const void *data, in
 
     while (xfer_count > 0) {
         /* wait until TXIS flag is set (means ready to send) */
-        while (i2c->ISR & I2C_ISR_TXIS) {}
+        if (_wait_for_txis(i2c) != I2C_STATUS_OK) {
+            return -2;
+        }
         /* write data to TXDR */
         i2c->TXDR = *(xfer_ptr++);
         xfer_count--;
@@ -454,12 +506,15 @@ int i2c_write_regs(i2c_t dev, uint8_t address, uint8_t reg, const void *data, in
     }
 
     /* no need to check TC flag for completion, in AUTOEND mode the stop is auto generated */
-    if (_wait_for_stop(i2c) == I2C_STATUS_ERROR) {
-        length = 0;
+    if (_wait_for_stop(i2c) != I2C_STATUS_OK) {
+        return -2;
     }
 
+    /* clear STOPF flag */
+    i2c->ICR = I2C_ICR_STOPCF;
+
     /* clear CR2 register */
-    i2c->CR2 &= (uint32_t)~((uint32_t)(I2C_CR2_SADD | I2C_CR2_HEAD10R | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_RD_WRN));
+    _clear_cr2(i2c);
 
     return length;
 }
