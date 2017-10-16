@@ -51,9 +51,13 @@
 #define I2C_GENERATE_START_READ        (uint32_t)(I2C_CR2_START | I2C_CR2_RD_WRN)
 #define I2C_GENERATE_START_WRITE       I2C_CR2_START
 
+#define I2C_STATUS_OK       0
+#define I2C_STATUS_ERROR    1
+
 /* static function definitions */
 static void _i2c_init(I2C_TypeDef *i2c, uint32_t timingr);
 static void _i2c_transfer_config(I2C_TypeDef *i2c, uint8_t address, uint8_t length, uint32_t mode, uint32_t request);
+static uint8_t _wait_for_stop(I2C_TypeDef *i2c);
 
 /**
  * @brief Array holding one pre-initialized mutex for each I2C device
@@ -143,6 +147,29 @@ static void _i2c_transfer_config(I2C_TypeDef *i2c, uint8_t address, uint8_t leng
     i2c->CR2 = tmpreg;
 }
 
+static uint8_t _wait_for_stop(I2C_TypeDef *i2c)
+{
+    /* wait until STOPF flag is set while checking if Not Acknowledge was raised */
+    uint8_t status = I2C_STATUS_OK;
+    while (!(i2c->ISR & I2C_ISR_STOPF)) {
+        if (i2c->ISR & I2C_ISR_NACKF) {
+            status = I2C_STATUS_ERROR;
+        }
+    }
+    if (status == I2C_STATUS_ERROR) {
+        /* clear NACK flag */
+        i2c->ICR = I2C_ICR_NACKCF;
+        /* flush TXDR */
+        if (i2c->ISR & I2C_ISR_TXIS) i2c->TXDR = 0x00; /* write dummy byte if transmit pending */
+        if (!(i2c->ISR & I2C_ISR_TXE)) i2c->ISR |= I2C_ISR_TXE; /* flush pending byte if TXDR not empty */
+    }
+
+    /* clear STOPF flag */
+    i2c->ICR = I2C_ICR_STOPCF;
+
+    return status;
+}
+
 int i2c_acquire(i2c_t dev)
 {
     if (dev >= I2C_NUMOF) {
@@ -217,11 +244,9 @@ int i2c_read_bytes(i2c_t dev, uint8_t address, void *data, int length)
     }
 
     /* no need to check TC flag for completion, in AUTOEND mode the stop is auto generated */
-    /* wait until STOPF flag is set */
-    while (!(i2c->ISR & I2C_ISR_STOPF)) {}
-
-    /* clear STOPF flag */
-    i2c->ICR = I2C_ICR_STOPCF;
+    if (_wait_for_stop(i2c) == I2C_STATUS_ERROR) {
+        length = 0;
+    }
 
     /* clear CR2 register */
     i2c->CR2 &= (uint32_t)~((uint32_t)(I2C_CR2_SADD | I2C_CR2_HEAD10R | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_RD_WRN));
@@ -291,11 +316,9 @@ int i2c_read_regs(i2c_t dev, uint8_t address, uint8_t reg, void *data, int lengt
     } while (xfer_count > 0);
 
     /* no need to check TC flag for completion, in AUTOEND mode the stop is auto generated */
-    /* wait until STOPF flag is set */
-    while (!(i2c->ISR & I2C_ISR_STOPF)) {}
-
-    /* clear STOPF flag */
-    i2c->ICR = I2C_ICR_STOPCF;
+    if (_wait_for_stop(i2c) == I2C_STATUS_ERROR) {
+        length = 0;
+    }
 
     /* clear CR2 register */
     i2c->CR2 &= (uint32_t)~((uint32_t)(I2C_CR2_SADD | I2C_CR2_HEAD10R | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_RD_WRN));
@@ -357,11 +380,9 @@ int i2c_write_bytes(i2c_t dev, uint8_t address, const void *data, int length)
     }
 
     /* no need to check TC flag for completion, in AUTOEND mode the stop is auto generated */
-    /* wait until STOPF flag is set */
-    while (!(i2c->ISR & I2C_ISR_STOPF)) {}
-
-    /* clear STOPF flag */
-    i2c->ICR = I2C_ICR_STOPCF;
+    if (_wait_for_stop(i2c) == I2C_STATUS_ERROR) {
+        length = 0;
+    }
 
     /* clear CR2 register */
     i2c->CR2 &= (uint32_t)~((uint32_t)(I2C_CR2_SADD | I2C_CR2_HEAD10R | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_RD_WRN));
@@ -378,7 +399,8 @@ int i2c_write_regs(i2c_t dev, uint8_t address, uint8_t reg, const void *data, in
 {
     int xfer_count = length;
     int xfer_size;
-    uint8_t *xfer_ptr = data; /* cuz compiler nags me */
+    uint8_t *xfer_ptr = data;
+    uint8_t error;
 
     if ((unsigned int)dev >= I2C_NUMOF) {
         return -1;
@@ -432,11 +454,9 @@ int i2c_write_regs(i2c_t dev, uint8_t address, uint8_t reg, const void *data, in
     }
 
     /* no need to check TC flag for completion, in AUTOEND mode the stop is auto generated */
-    /* wait until STOPF flag is set */
-    while (!(i2c->ISR & I2C_ISR_STOPF)) {}
-
-    /* clear STOPF flag */
-    i2c->ICR = I2C_ICR_STOPCF;
+    if (_wait_for_stop(i2c) == I2C_STATUS_ERROR) {
+        length = 0;
+    }
 
     /* clear CR2 register */
     i2c->CR2 &= (uint32_t)~((uint32_t)(I2C_CR2_SADD | I2C_CR2_HEAD10R | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_RD_WRN));
