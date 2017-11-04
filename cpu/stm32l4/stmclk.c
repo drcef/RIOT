@@ -173,6 +173,18 @@ void stmclk_disable_hsi(void)
     }
 }
 
+void stmclk_bdp_unlock(void)
+{
+    periph_clk_en(APB1, RCC_APB1ENR1_PWREN);
+    PWR->CR1 |= PWR_CR1_DBP;
+}
+
+void stmclk_bdp_lock(void)
+{
+    PWR->CR1 &= ~(PWR_CR1_DBP);
+    periph_clk_dis(APB1, RCC_APB1ENR1_PWREN);
+}
+
 void stmclk_enable_lfclk(void)
 {
     /* configure the low speed clock domain (LSE vs LSI) */
@@ -199,16 +211,4 @@ void stmclk_disable_lfclk(void)
 #else
     RCC->CSR &= ~(RCC_CSR_LSION);
 #endif
-}
-
-void stmclk_bdp_unlock(void)
-{
-    periph_clk_en(APB1, RCC_APB1ENR1_PWREN);
-    PWR->CR1 |= PWR_CR1_DBP;
-}
-
-void stmclk_bdp_lock(void)
-{
-    PWR->CR1 &= ~(PWR_CR1_DBP);
-    periph_clk_dis(APB1, RCC_APB1ENR1_PWREN);
 }
