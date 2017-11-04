@@ -68,6 +68,34 @@ void pm_set(unsigned mode)
     }
 #endif
 
+#if defined(CPU_FAM_STM32L4)
+    switch (mode) {
+        case 0: /* Shutdown Mode */
+            /* todo: implement */
+            break;
+        case 1: /* Standby Mode */
+            /* todo: implement */
+            break;
+        case 2: /* Stop 2 Mode */
+            /* Select Stop 2 low-power mode in power control register 1 */
+            PWR->CR1 &= ~(PWR_CR1_LPMS);
+            PWR->CR1 |= PWR_CR1_LPMS_STOP2;
+            /* Set SLEEPDEEP bit in Cortex System Control register */
+            deep = 1;
+            break;
+        case 3: /* Stop 1 Mode */
+            /* todo: implement */
+            break;
+        case 4: /* Stop 0 Mode */
+            /* todo: implement */
+            break;
+        case 5: /* Sleep Mode */
+
+            break;
+    }
+#endif
+
+    /* Execute WFI instruction */
     cortexm_sleep(deep);
 
 #if defined(CPU_FAM_STM32F1) || defined(CPU_FAM_STM32F2) || defined(CPU_FAM_STM32F4)
