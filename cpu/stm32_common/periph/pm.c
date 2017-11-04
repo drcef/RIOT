@@ -25,7 +25,7 @@
 
 #include "irq.h"
 #include "periph/pm.h"
-#if defined(CPU_FAM_STM32F1) || defined(CPU_FAM_STM32F2) || defined(CPU_FAM_STM32F4)
+#if defined(CPU_FAM_STM32F1) || defined(CPU_FAM_STM32F2) || defined(CPU_FAM_STM32F4) || defined(CPU_FAM_STM32L4)
 #include "stmclk.h"
 #endif
 
@@ -66,9 +66,7 @@ void pm_set(unsigned mode)
             deep = 1;
             break;
     }
-#endif
-
-#if defined(CPU_FAM_STM32L4)
+#elif defined(CPU_FAM_STM32L4)
     switch (mode) {
         case 0: /* Shutdown Mode */
             /* todo: implement */
@@ -98,7 +96,7 @@ void pm_set(unsigned mode)
     /* Execute WFI instruction */
     cortexm_sleep(deep);
 
-#if defined(CPU_FAM_STM32F1) || defined(CPU_FAM_STM32F2) || defined(CPU_FAM_STM32F4)
+#if defined(CPU_FAM_STM32F1) || defined(CPU_FAM_STM32F2) || defined(CPU_FAM_STM32F4) || defined(CPU_FAM_STM32L4)
     if (deep) {
         /* Re-init clock after STOP */
         stmclk_init_sysclk();
