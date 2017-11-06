@@ -54,9 +54,46 @@ typedef struct {
     uint8_t rowstart;
     uint8_t xstart;
     uint8_t ystart;
-    uint8_t width;
-    uint8_t height;
+    uint8_t width;      /* These last 4 might need to be signed ints instead ... */
+    uint8_t height;     /* Try it in case of strange issues */
+    uint8_t cursor_x;
+    uint8_t cursor_y;
+    bool textwrap;
+    uint16_t bg_color;
 } st7735_t;
+
+typedef struct {
+    const unsigned char *index;
+    const unsigned char *unicode;
+    const unsigned char *data;
+    unsigned char version;
+    unsigned char reserved;
+    unsigned char index1_first;
+    unsigned char index1_last;
+    unsigned char index2_first;
+    unsigned char index2_last;
+    unsigned char bits_index;
+    unsigned char bits_width;
+    unsigned char bits_height;
+    unsigned char bits_xoffset;
+    unsigned char bits_yoffset;
+    unsigned char bits_delta;
+    unsigned char line_space;
+    unsigned char cap_height;
+} st7735_font_t;
+
+extern const st7735_font_t DroidSans_8;
+extern const st7735_font_t DroidSans_14;
+extern const st7735_font_t DroidSans_16;
+extern const st7735_font_t DroidSans_18;
+extern const st7735_font_t Arial_16;
+extern const st7735_font_t Nunito_12_Light;
+extern const st7735_font_t Nunito_13_Light;
+extern const st7735_font_t Nunito_14_Light;
+extern const st7735_font_t Nunito_16_Light;
+extern const st7735_font_t Nunito_18_Light;
+extern const st7735_font_t Nunito_20_Light;
+extern const st7735_font_t Nunito_24_Light;
 
 /**
  * @brief   Initialize the given display
@@ -80,7 +117,9 @@ void st7735_draw_h_line(const st7735_t *dev, int16_t x, int16_t y, int16_t w, ui
 void st7735_fill_rect(const st7735_t *dev, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 void st7735_set_rotation(st7735_t *dev, uint8_t r);
 void st7735_invert_display(const st7735_t *dev, bool i);
-uint16_t st7735_color_565( uint8_t r, uint8_t g, uint8_t b);
+uint16_t st7735_color_565(uint8_t r, uint8_t g, uint8_t b);
+void st7735_draw_font_char(st7735_t *dev, const st7735_font_t *font, uint16_t color, bool transparent, unsigned int c);
+void st7735_print(st7735_t *dev, const st7735_font_t *font, uint16_t color, bool transparent, const char *str);
 
 #ifdef __cplusplus
 }

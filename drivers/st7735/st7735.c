@@ -35,105 +35,9 @@
 #define SPI_CLK             (SPI_CLK_10MHZ)
 #define SPI_MODE            (SPI_MODE_0)
 
+/* Transfering uint32_t's around is faster than uint8_t's */
+/* 128x128x16bit = 32768 bytes = 8192 uint32_t's */
 static uint32_t framebuffer[8192];
-
-static const uint8_t _ascii[][5] = {
-    {0x00, 0x00, 0x00, 0x00, 0x00},/* 20 SPACE*/
-    {0x00, 0x00, 0x5f, 0x00, 0x00},/* 21 ! */
-    {0x00, 0x07, 0x00, 0x07, 0x00},/* 22 " */
-    {0x14, 0x7f, 0x14, 0x7f, 0x14},/* 23 # */
-    {0x24, 0x2a, 0x7f, 0x2a, 0x12},/* 24 $ */
-    {0x23, 0x13, 0x08, 0x64, 0x62},/* 25 % */
-    {0x36, 0x49, 0x55, 0x22, 0x50},/* 26 & */
-    {0x00, 0x05, 0x03, 0x00, 0x00},/* 27 ' */
-    {0x00, 0x1c, 0x22, 0x41, 0x00},/* 28 ( */
-    {0x00, 0x41, 0x22, 0x1c, 0x00},/* 29 ) */
-    {0x14, 0x08, 0x3e, 0x08, 0x14},/* 2a * */
-    {0x08, 0x08, 0x3e, 0x08, 0x08},/* 2b + */
-    {0x00, 0x50, 0x30, 0x00, 0x00},/* 2c , */
-    {0x08, 0x08, 0x08, 0x08, 0x08},/* 2d - */
-    {0x00, 0x60, 0x60, 0x00, 0x00},/* 2e . */
-    {0x20, 0x10, 0x08, 0x04, 0x02},/* 2f / */
-    {0x3e, 0x51, 0x49, 0x45, 0x3e},/* 30 0 */
-    {0x00, 0x42, 0x7f, 0x40, 0x00},/* 31 1 */
-    {0x42, 0x61, 0x51, 0x49, 0x46},/* 32 2 */
-    {0x21, 0x41, 0x45, 0x4b, 0x31},/* 33 3 */
-    {0x18, 0x14, 0x12, 0x7f, 0x10},/* 34 4 */
-    {0x27, 0x45, 0x45, 0x45, 0x39},/* 35 5 */
-    {0x3c, 0x4a, 0x49, 0x49, 0x30},/* 36 6 */
-    {0x01, 0x71, 0x09, 0x05, 0x03},/* 37 7 */
-    {0x36, 0x49, 0x49, 0x49, 0x36},/* 38 8 */
-    {0x06, 0x49, 0x49, 0x29, 0x1e},/* 39 9 */
-    {0x00, 0x36, 0x36, 0x00, 0x00},/* 3a : */
-    {0x00, 0x56, 0x36, 0x00, 0x00},/* 3b ; */
-    {0x08, 0x14, 0x22, 0x41, 0x00},/* 3c < */
-    {0x14, 0x14, 0x14, 0x14, 0x14},/* 3d = */
-    {0x00, 0x41, 0x22, 0x14, 0x08},/* 3e > */
-    {0x02, 0x01, 0x51, 0x09, 0x06},/* 3f ? */
-    {0x32, 0x49, 0x79, 0x41, 0x3e},/* 40 @ */
-    {0x7e, 0x11, 0x11, 0x11, 0x7e},/* 41 A */
-    {0x7f, 0x49, 0x49, 0x49, 0x36},/* 42 B */
-    {0x3e, 0x41, 0x41, 0x41, 0x22},/* 43 C */
-    {0x7f, 0x41, 0x41, 0x22, 0x1c},/* 44 D */
-    {0x7f, 0x49, 0x49, 0x49, 0x41},/* 45 E */
-    {0x7f, 0x09, 0x09, 0x09, 0x01},/* 46 F */
-    {0x3e, 0x41, 0x49, 0x49, 0x7a},/* 47 G */
-    {0x7f, 0x08, 0x08, 0x08, 0x7f},/* 48 H */
-    {0x00, 0x41, 0x7f, 0x41, 0x00},/* 49 I */
-    {0x20, 0x40, 0x41, 0x3f, 0x01},/* 4a J */
-    {0x7f, 0x08, 0x14, 0x22, 0x41},/* 4b K */
-    {0x7f, 0x40, 0x40, 0x40, 0x40},/* 4c L */
-    {0x7f, 0x02, 0x0c, 0x02, 0x7f},/* 4d M */
-    {0x7f, 0x04, 0x08, 0x10, 0x7f},/* 4e N */
-    {0x3e, 0x41, 0x41, 0x41, 0x3e},/* 4f O */
-    {0x7f, 0x09, 0x09, 0x09, 0x06},/* 50 P */
-    {0x3e, 0x41, 0x51, 0x21, 0x5e},/* 51 Q */
-    {0x7f, 0x09, 0x19, 0x29, 0x46},/* 52 R */
-    {0x46, 0x49, 0x49, 0x49, 0x31},/* 53 S */
-    {0x01, 0x01, 0x7f, 0x01, 0x01},/* 54 T */
-    {0x3f, 0x40, 0x40, 0x40, 0x3f},/* 55 U */
-    {0x1f, 0x20, 0x40, 0x20, 0x1f},/* 56 V */
-    {0x3f, 0x40, 0x38, 0x40, 0x3f},/* 57 W */
-    {0x63, 0x14, 0x08, 0x14, 0x63},/* 58 X */
-    {0x07, 0x08, 0x70, 0x08, 0x07},/* 59 Y */
-    {0x61, 0x51, 0x49, 0x45, 0x43},/* 5a Z */
-    {0x00, 0x7f, 0x41, 0x41, 0x00},/* 5b [ */
-    {0x02, 0x04, 0x08, 0x10, 0x20},/* 5c \ */
-    {0x00, 0x41, 0x41, 0x7f, 0x00},/* 5d ] */
-    {0x04, 0x02, 0x01, 0x02, 0x04},/* 5e ^ */
-    {0x40, 0x40, 0x40, 0x40, 0x40},/* 5f _ */
-    {0x00, 0x01, 0x02, 0x04, 0x00},/* 60 ` */
-    {0x20, 0x54, 0x54, 0x54, 0x78},/* 61 a */
-    {0x7f, 0x48, 0x44, 0x44, 0x38},/* 62 b */
-    {0x38, 0x44, 0x44, 0x44, 0x20},/* 63 c */
-    {0x38, 0x44, 0x44, 0x48, 0x7f},/* 64 d */
-    {0x38, 0x54, 0x54, 0x54, 0x18},/* 65 e */
-    {0x08, 0x7e, 0x09, 0x01, 0x02},/* 66 f */
-    {0x0c, 0x52, 0x52, 0x52, 0x3e},/* 67 g */
-    {0x7f, 0x08, 0x04, 0x04, 0x78},/* 68 h */
-    {0x00, 0x44, 0x7d, 0x40, 0x00},/* 69 i */
-    {0x20, 0x40, 0x44, 0x3d, 0x00},/* 6a j */
-    {0x7f, 0x10, 0x28, 0x44, 0x00},/* 6b k */
-    {0x00, 0x41, 0x7f, 0x40, 0x00},/* 6c l */
-    {0x7c, 0x04, 0x18, 0x04, 0x78},/* 6d m */
-    {0x7c, 0x08, 0x04, 0x04, 0x78},/* 6e n */
-    {0x38, 0x44, 0x44, 0x44, 0x38},/* 6f o */
-    {0x7c, 0x14, 0x14, 0x14, 0x08},/* 70 p */
-    {0x08, 0x14, 0x14, 0x18, 0x7c},/* 71 q */
-    {0x7c, 0x08, 0x04, 0x04, 0x08},/* 72 r */
-    {0x48, 0x54, 0x54, 0x54, 0x20},/* 73 s */
-    {0x04, 0x3f, 0x44, 0x40, 0x20},/* 74 t */
-    {0x3c, 0x40, 0x40, 0x20, 0x7c},/* 75 u */
-    {0x1c, 0x20, 0x40, 0x20, 0x1c},/* 76 v */
-    {0x3c, 0x40, 0x30, 0x40, 0x3c},/* 77 w */
-    {0x44, 0x28, 0x10, 0x28, 0x44},/* 78 x */
-    {0x0c, 0x50, 0x50, 0x50, 0x3c},/* 79 y */
-    {0x44, 0x64, 0x54, 0x4c, 0x44},/* 7a z */
-    {0x00, 0x08, 0x36, 0x41, 0x00},/* 7b { */
-    {0x00, 0x00, 0x7f, 0x00, 0x00},/* 7c | */
-    {0x00, 0x41, 0x36, 0x08, 0x00},/* 7d } */
-    {0x10, 0x08, 0x08, 0x10, 0x08},/* 7e ~ */
-};
 
 static inline void lock(const st7735_t *dev)
 {
@@ -222,6 +126,10 @@ int st7735_init(st7735_t *dev, spi_t spi, gpio_t cs, gpio_t reset, gpio_t mode)
     dev->inverted = 0;
     dev->colstart = ST7735_COLSTART;
     dev->rowstart = ST7735_ROWSTART;
+    dev->cursor_x = 0;
+    dev->cursor_y = 0;
+    dev->textwrap = false;
+    dev->bg_color = 0x0000;
 
     DEBUG("done setting dev members\n");
 
@@ -236,22 +144,22 @@ int st7735_init(st7735_t *dev, spi_t spi, gpio_t cs, gpio_t reset, gpio_t mode)
     
     /* reset display */
     gpio_set(reset);
-    xtimer_usleep(500 * 1000U);
+    xtimer_usleep(20 * 1000U);
     gpio_clear(reset);
-    xtimer_usleep(500 * 1000U);
+    xtimer_usleep(20 * 1000U);
     gpio_set(reset);
-    xtimer_usleep(500 * 1000U);
+    xtimer_usleep(20 * 1000U);
 
     /* acquire SPI */
     lock(dev);
 
     /* software reset */
     _writecommand(dev, ST7735_SWRESET);
-    xtimer_usleep(150 * 1000U);
+    xtimer_usleep(10 * 1000U);
 
     /* out of sleep mode */
     _writecommand(dev, ST7735_SLPOUT);
-    xtimer_usleep(500 * 1000U);
+    xtimer_usleep(10 * 1000U);
 
     /* frame rate control - normal mode*/
     _writecommand(dev, ST7735_FRMCTR1);
@@ -365,7 +273,7 @@ int st7735_init(st7735_t *dev, spi_t spi, gpio_t cs, gpio_t reset, gpio_t mode)
 
     /* Main screen turn on */
     _writecommand(dev, ST7735_DISPON);
-    xtimer_usleep(100 * 1000U);
+    xtimer_usleep(10 * 1000U);
 
     /* release SPI */
     done(dev);
@@ -412,37 +320,54 @@ void st7735_set_addr_window(const st7735_t *dev, uint8_t x0, uint8_t y0, uint8_t
     done(dev);
 }
 
+void st7735_push_frame(const st7735_t *dev, uint16_t pixelcount)
+{
+    lock(dev);
+    gpio_write(dev->mode, 1);
+    spi_transfer_bytes(dev->spi, dev->cs, false, (uint8_t *)&framebuffer, NULL, pixelcount*2); // each pixel is 16 bits
+    done(dev);
+}
+
 void st7735_push_color(const st7735_t *dev, uint16_t color, uint16_t pixelcount)
 {
     color = (color >> 8) | (color << 8); // swap endianness
-    const uint32_t val = (color << 16) | color;
-    uint16_t bytecount = pixelcount * 2;
-    uint16_t opcount = pixelcount / 2;
 
-    /* == OPTIMIZATION ==
-     * Bulk transferring all pixels in one spi_transfer_bytes call eliminates
-     * a lot of overhead compared to transferring each pixel seperately. At 10 MHz,
-     * this more than triples the transmission rate of frames. The whole frame needs
-     * to be rendered in a framebuffer first though, which requires sufficient SRAM.
-     *
-     * The copy operation to fill the framebuffer is at least twice as fast when
-     * using uint32_t types compared to uint8_t because a 32-bit CPU does both in
-     * in one operation but copies 4 bytes at once with uint32_t.
-     */
-    for (uint16_t i = 0; i < opcount; i++) {
-        framebuffer[i] = val;
+    if (pixelcount > 1) {
+        const uint32_t val = (color << 16) | color;
+        uint16_t bytecount = pixelcount * 2;
+        uint16_t opcount = pixelcount / 2;
+
+        /* == OPTIMIZATION ==
+         * Bulk transferring all pixels in one spi_transfer_bytes call eliminates
+         * a lot of overhead compared to transferring each pixel seperately. At 10 MHz,
+         * this more than triples the transmission rate of frames. The whole frame needs
+         * to be rendered in a framebuffer first though, which requires sufficient SRAM.
+         *
+         * The copy operation to fill the framebuffer is at least twice as fast when
+         * using uint32_t types compared to uint8_t because a 32-bit CPU does both in
+         * in one operation but copies 4 bytes at once with uint32_t.
+         */
+        for (uint16_t i = 0; i < opcount; i++) {
+            framebuffer[i] = val;
+        }
+
+        lock(dev);
+        gpio_write(dev->mode, 1);
+        spi_transfer_bytes(dev->spi, dev->cs, false, (uint8_t *)&framebuffer, NULL, bytecount);
+        done(dev);
     }
-
-    lock(dev);
-    gpio_write(dev->mode, 1);
-    spi_transfer_bytes(dev->spi, dev->cs, false, (uint8_t *)&framebuffer, NULL, bytecount);
-    done(dev);
+    else {
+        lock(dev);
+        gpio_write(dev->mode, 1);
+        spi_transfer_bytes(dev->spi, dev->cs, false, (uint8_t *)&color, NULL, 2);
+        done(dev);
+    }
 }
 
 void st7735_draw_pixel(const st7735_t *dev, int16_t x, int16_t y, uint16_t color)
 {
     if ((x < 0) || (x >= dev->width) || (y < 0) || (y >= dev->height)) return;
-    st7735_set_addr_window(dev, x, y, x+1, y+1);
+    st7735_set_addr_window(dev, x, y, x, y);
     st7735_push_color(dev, color, 1);
 }
 
@@ -481,4 +406,185 @@ void st7735_invert_display(const st7735_t *dev, bool i)
     lock(dev);
     _writecommand(dev, i ? ST7735_INVON : ST7735_INVOFF);
     done(dev);
+}
+
+static inline uint32_t fetchbit(const uint8_t *p, uint32_t index)
+{
+    if (p[index >> 3] & (1 << (7 - (index & 7)))) return 1;
+    return 0;
+}
+
+static uint32_t fetchbits_unsigned(const uint8_t *p, uint32_t index, uint32_t required)
+{
+    uint32_t val = 0;
+    do {
+        uint8_t b = p[index >> 3];
+        uint32_t avail = 8 - (index & 7);
+        if (avail <= required) {
+            val <<= avail;
+            val |= b & ((1 << avail) - 1);
+            index += avail;
+            required -= avail;
+        } else {
+            b >>= avail - required;
+            val <<= required;
+            val |= b & ((1 << required) - 1);
+            break;
+        }
+    } while (required);
+    return val;
+}
+
+static uint32_t fetchbits_signed(const uint8_t *p, uint32_t index, uint32_t required)
+{
+    uint32_t val = fetchbits_unsigned(p, index, required);
+    if (val & (1 << (required - 1))) {
+        return (int32_t)val - (1 << required);
+    }
+    return (int32_t)val;
+}
+
+static void draw_font_bits(const st7735_t *dev, uint32_t bits, uint32_t numbits, uint32_t x, uint32_t y, uint32_t repeat, uint16_t color, bool transparent)
+{
+    if (bits == 0) return;
+
+    /* To render text transparently, we draw each pixel individually.
+     * If transparency is not needed and the text can be drawn with a
+     * monochrome background, we can draw the font bits more efficiently
+     * using the framebuffer.
+     */
+
+    if (transparent) {
+        do {
+            uint32_t x1 = x;
+            uint32_t n = numbits;
+            do {
+                n--;
+                if (bits & (1 << n)) st7735_draw_pixel(dev, x1, y, color);
+                x1++;
+            } while (n > 0);
+            y++;
+            repeat--;
+        } while (repeat);
+    }
+    else {
+        uint16_t *fb = (uint16_t*)framebuffer;
+
+        uint16_t background = dev->bg_color;
+        color = (color >> 8) | (color << 8); // swap endianness
+        background = (background >> 8) | (background << 8); // swap endianness
+
+        uint32_t pixelcount = 0;
+        for (uint32_t i=0; i<repeat; i++) {
+            uint32_t n = numbits;
+            do {
+                if (bits & (1 << --n)) fb[pixelcount++] = color;
+                else fb[pixelcount++] = background;
+            } while (n > 0);
+        }
+
+        st7735_set_addr_window(dev, x, y, x+numbits-1, y+repeat-1);
+        st7735_push_frame(dev, pixelcount);
+    }
+}
+
+void st7735_draw_font_char(st7735_t *dev, const st7735_font_t *font, uint16_t color, bool transparent, unsigned int c)
+{
+    uint32_t bitoffset;
+    const uint8_t *data;
+
+    if (c == '\n') {
+        dev->cursor_y += font->line_space;
+        dev->cursor_x = 0;
+        return;
+    }
+
+    if (c >= font->index1_first && c <= font->index1_last) {
+        bitoffset = c - font->index1_first;
+        bitoffset *= font->bits_index;
+    } else if (c >= font->index2_first && c <= font->index2_last) {
+        bitoffset = c - font->index2_first + font->index1_last - font->index1_first + 1;
+        bitoffset *= font->bits_index;
+    } else {
+        return;
+    }
+    data = font->data + fetchbits_unsigned(font->index, bitoffset, font->bits_index);
+
+    uint32_t encoding = fetchbits_unsigned(data, 0, 3);
+    if (encoding != 0) return;
+    uint32_t width = fetchbits_unsigned(data, 3, font->bits_width);
+    bitoffset = font->bits_width + 3;
+    uint32_t height = fetchbits_unsigned(data, bitoffset, font->bits_height);
+    bitoffset += font->bits_height;
+
+    int32_t xoffset = fetchbits_signed(data, bitoffset, font->bits_xoffset);
+    bitoffset += font->bits_xoffset;
+    int32_t yoffset = fetchbits_signed(data, bitoffset, font->bits_yoffset);
+    bitoffset += font->bits_yoffset;
+
+    uint32_t delta = fetchbits_unsigned(data, bitoffset, font->bits_delta);
+    bitoffset += font->bits_delta;
+
+    if (dev->cursor_x < 0) dev->cursor_x = 0;
+
+    int32_t origin_x = dev->cursor_x + xoffset;
+    if (origin_x < 0) {
+        dev->cursor_x -= xoffset;
+        origin_x = 0;
+    }
+
+    if (origin_x + (int)width > dev->width) {
+        if (!dev->textwrap) return;
+        origin_x = 0;
+        if (xoffset >= 0) dev->cursor_x = 0;
+        else dev->cursor_x = -xoffset;
+        dev->cursor_y += font->line_space;
+    }
+
+    if (dev->cursor_y >= dev->height) return;
+
+    dev->cursor_x += delta;
+
+    int32_t origin_y = dev->cursor_y + font->cap_height - height - yoffset;
+    int32_t linecount = height;
+    uint32_t y = origin_y;
+    while (linecount) {
+        uint32_t b = fetchbit(data, bitoffset++);
+        if (b == 0) {
+            uint32_t x = 0;
+            do {
+                uint32_t xsize = width - x;
+                if (xsize > 32) xsize = 32;
+                uint32_t bits = fetchbits_unsigned(data, bitoffset, xsize);
+                draw_font_bits(dev, bits, xsize, origin_x + x, y, 1, color, transparent);
+                bitoffset += xsize;
+                x += xsize;
+            } while (x < width);
+            y++;
+            linecount--;
+        } else {
+            uint32_t n = fetchbits_unsigned(data, bitoffset, 3) + 2;
+            bitoffset += 3;
+            uint32_t x = 0;
+            do {
+                uint32_t xsize = width - x;
+                if (xsize > 32) xsize = 32;
+                uint32_t bits = fetchbits_unsigned(data, bitoffset, xsize);
+                draw_font_bits(dev, bits, xsize, origin_x + x, y, n, color, transparent);
+                bitoffset += xsize;
+                x += xsize;
+            } while (x < width);
+            y += n;
+            linecount -= n;
+        }
+    }
+}
+
+void st7735_print(st7735_t *dev, const st7735_font_t *font, uint16_t color, bool transparent, const char *str)
+{
+    unsigned char c;
+
+    while (c = *(str++)) {
+        st7735_draw_font_char(dev, font, color, transparent, c);
+    }
 }
