@@ -82,19 +82,6 @@ typedef struct {
     unsigned char cap_height;
 } st7735_font_t;
 
-extern const st7735_font_t DroidSans_8;
-extern const st7735_font_t DroidSans_14;
-extern const st7735_font_t DroidSans_16;
-extern const st7735_font_t DroidSans_18;
-extern const st7735_font_t Arial_16;
-extern const st7735_font_t Nunito_12_Light;
-extern const st7735_font_t Nunito_13_Light;
-extern const st7735_font_t Nunito_14_Light;
-extern const st7735_font_t Nunito_16_Light;
-extern const st7735_font_t Nunito_18_Light;
-extern const st7735_font_t Nunito_20_Light;
-extern const st7735_font_t Nunito_24_Light;
-
 /**
  * @brief   Initialize the given display
  *
@@ -114,12 +101,15 @@ void st7735_fill_screen(const st7735_t *dev, uint16_t color);
 void st7735_draw_pixel(const st7735_t *dev, int16_t x, int16_t y, uint16_t color);
 void st7735_draw_v_line(const st7735_t *dev, int16_t x, int16_t y, int16_t h, uint16_t color);
 void st7735_draw_h_line(const st7735_t *dev, int16_t x, int16_t y, int16_t w, uint16_t color);
+void st7735_fill_round_rect(const st7735_t *dev, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
 void st7735_fill_rect(const st7735_t *dev, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 void st7735_set_rotation(st7735_t *dev, uint8_t r);
 void st7735_invert_display(const st7735_t *dev, bool i);
 uint16_t st7735_color_565(uint8_t r, uint8_t g, uint8_t b);
 void st7735_draw_font_char(st7735_t *dev, const st7735_font_t *font, uint16_t color, bool transparent, unsigned int c);
 void st7735_print(st7735_t *dev, const st7735_font_t *font, uint16_t color, bool transparent, const char *str);
+uint8_t st7735_char_width(const st7735_font_t *font, unsigned int c, bool offset);
+uint16_t st7735_str_width(const st7735_font_t *font, const char *str);
 
 #ifdef __cplusplus
 }

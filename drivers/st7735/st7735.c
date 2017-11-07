@@ -396,6 +396,43 @@ void st7735_fill_rect(const st7735_t *dev, int16_t x, int16_t y, int16_t w, int1
     st7735_push_color(dev, color, w*h);
 }
 
+static void fill_circle_helper(const st7735_t *dev, int16_t x0, int16_t y0, int16_t r, uint8_t cornername, int16_t delta, uint16_t color)
+{
+    int16_t f = 1 - r;
+    int16_t ddF_x = 1;
+    int16_t ddF_y = -2 * r;
+    int16_t x = 0;
+    int16_t y = r;
+
+    while (x<y) {
+        if (f >= 0) {
+            y--;
+            ddF_y += 2;
+            f += ddF_y;
+        }
+        x++;
+        ddF_x += 2;
+        f += ddF_x;
+
+        if (cornername & 0x1) {
+            st7735_draw_v_line(dev, x0+x, y0-y, 2*y+1+delta, color);
+            st7735_draw_v_line(dev, x0+y, y0-x, 2*x+1+delta, color);
+        }
+        if (cornername & 0x2) {
+            st7735_draw_v_line(dev, x0-x, y0-y, 2*y+1+delta, color);
+            st7735_draw_v_line(dev, x0-y, y0-x, 2*x+1+delta, color);
+        }
+    }
+}
+
+void st7735_fill_round_rect(const st7735_t *dev, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color)
+{
+    st7735_fill_rect(dev, x+r, y, w-2*r, h, color);
+
+    fill_circle_helper(dev, x+w-r-1, y+r, r, 1, h-2*r-1, color);
+    fill_circle_helper(dev, x+r, y+r, r, 2, h-2*r-1, color);
+}
+
 void st7735_fill_screen(const st7735_t *dev, uint16_t color)
 {
     st7735_fill_rect(dev, 0, 0, dev->width, dev->height, color);
@@ -584,7 +621,49 @@ void st7735_print(st7735_t *dev, const st7735_font_t *font, uint16_t color, bool
 {
     unsigned char c;
 
-    while (c = *(str++)) {
+    while ((c = *(str++))) {
         st7735_draw_font_char(dev, font, color, transparent, c);
     }
+}
+
+uint8_t st7735_char_width(const st7735_font_t *font, unsigned int c, bool offset)
+{
+    uint32_t bitoffset;
+    const uint8_t *data;
+
+    if (c >= font->index1_first && c <= font->index1_last) {
+        bitoffset = c - font->index1_first;
+        bitoffset *= font->bits_index;
+    } else if (c >= font->index2_first && c <= font->index2_last) {
+        bitoffset = c - font->index2_first + font->index1_last - font->index1_first + 1;
+        bitoffset *= font->bits_index;
+    } else {
+        return 0;
+    }
+    data = font->data + fetchbits_unsigned(font->index, bitoffset, font->bits_index);
+
+    uint32_t encoding = fetchbits_unsigned(data, 0, 3);
+    if (encoding != 0) return 0;
+    bitoffset = font->bits_width + 3;
+    bitoffset += font->bits_height;
+    int32_t xoffset = fetchbits_signed(data, bitoffset, font->bits_xoffset);
+    bitoffset += font->bits_xoffset;
+    bitoffset += font->bits_yoffset;
+    uint32_t delta = fetchbits_unsigned(data, bitoffset, font->bits_delta);
+
+    if (offset) return (uint8_t) (delta + xoffset);
+    else return (uint8_t) delta;
+}
+
+uint16_t st7735_str_width(const st7735_font_t *font, const char *str)
+{
+    unsigned char c;
+    uint16_t str_width = 0; 
+
+    str_width += st7735_char_width(font, *(str++), true);
+    while ((c = *(str++))) {
+        str_width += st7735_char_width(font, c, false);
+    }
+
+    return str_width;
 }
