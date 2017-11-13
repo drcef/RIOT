@@ -154,3 +154,6 @@ endif
 ifneq (,$(filter sim800,$(USEMODULE)))
   USEMODULE_INCLUDES += $(RIOTBASE)/drivers/sim800/include
 endif
+ifneq (,$(filter max17055,$(USEMODULE)))
+  USEMODULE_INCLUDES += $(RIOTBASE)/drivers/max17055/include
+endif
