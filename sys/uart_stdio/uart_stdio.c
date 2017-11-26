@@ -85,6 +85,7 @@ static ssize_t uart_stdio_vfs_write(vfs_file_t *filp, const void *src, size_t nb
 
 void uart_stdio_init(void)
 {
+#if 0
 #ifndef USE_ETHOS_FOR_STDIO
     uart_init(UART_STDIO_DEV, UART_STDIO_BAUDRATE, (uart_rx_cb_t) isrpipe_write_one, &uart_stdio_isrpipe);
 #else
@@ -105,19 +106,24 @@ void uart_stdio_init(void)
         /* How to handle errors on init? */
     }
 #endif
+#endif
 }
 
 int uart_stdio_read(char* buffer, int count)
 {
-    return isrpipe_read(&uart_stdio_isrpipe, buffer, count);
+    //return isrpipe_read(&uart_stdio_isrpipe, buffer, count);
+    return 0;
 }
 
 int uart_stdio_write(const char* buffer, int len)
 {
+/*
 #ifndef USE_ETHOS_FOR_STDIO
     uart_write(UART_STDIO_DEV, (const uint8_t *)buffer, (size_t)len);
 #else
     ethos_send_frame(&ethos, (const uint8_t *)buffer, len, ETHOS_FRAME_TYPE_TEXT);
 #endif
     return len;
+*/
+    return 0;
 }
