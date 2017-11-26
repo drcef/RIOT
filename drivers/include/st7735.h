@@ -35,10 +35,10 @@
  * @name    Definition of display dimensions
  * @{
  */
-#define ST7735_RES_X                   (128U)   /**< pixels per row */
-#define ST7735_RES_Y                   (128U)   /**< pixels per column */
-#define ST7735_COLSTART                (2U)   /**< characters per row */
-#define ST7735_ROWSTART                (3U)    /**< characters per column */
+#define ST7735_RES_X                   (128U)
+#define ST7735_RES_Y                   (128U)
+#define ST7735_COLSTART                (0U)   
+#define ST7735_ROWSTART                (32U) 
 /** @} */
 
 /**
