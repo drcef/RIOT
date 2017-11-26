@@ -74,7 +74,20 @@ static const timer_conf_t timer_config[] = {
  * @name UART configuration
  * @{
  */
+// first USART (used by default for stdio) is assigned to nonexistent pins
+// the second (and only) USART we have it for GPRS and we don't want RIOT using it
+// ideally should disable stdio output on UART, this is just a quick workaround!
 static const uart_conf_t uart_config[] = {
+    {
+        .dev        = USART2,
+        .rcc_mask   = RCC_APB1ENR1_USART2EN,
+        .rx_pin     = GPIO_PIN(PORT_A, 3),
+        .tx_pin     = GPIO_PIN(PORT_A, 2),
+        .rx_af      = GPIO_AF7,
+        .tx_af      = GPIO_AF7,
+        .bus        = APB1,
+        .irqn       = USART2_IRQn
+    },
     {
         .dev        = USART2,
         .rcc_mask   = RCC_APB1ENR1_USART2EN,
