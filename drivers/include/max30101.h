@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 #ifndef MAX30101_I2C_ADDRESS
-#define MAX30101_I2C_ADDRESS           0x57
+#define MAX30101_I2C_ADDRESS           0xAE
 #endif
 
 /**
