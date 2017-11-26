@@ -25,7 +25,7 @@
 #include "st7735.h"
 #include "st7735_internal.h"
 
-#define ENABLE_DEBUG        (1)
+#define ENABLE_DEBUG        (0)
 #include "debug.h"
 
 #define ASCII_MIN           0x20    /**< start of ASCII table */
