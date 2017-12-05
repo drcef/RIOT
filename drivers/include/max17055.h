@@ -49,6 +49,9 @@ enum {
 typedef struct {
 	i2c_t i2c;
 	uint8_t addr;
+	uint16_t capacity;
+	uint16_t rsense;
+	int16_t ichgterm;
 } max17055_params_t;
 
 /**
@@ -60,6 +63,7 @@ typedef struct {
 
 
 int max17055_init(max17055_t *dev, const max17055_params_t *params);
+int max17055_repsoc(const max17055_t *dev);
 
 #ifdef __cplusplus
 }
