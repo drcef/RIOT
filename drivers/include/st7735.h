@@ -110,6 +110,7 @@ void st7735_draw_font_char(st7735_t *dev, const st7735_font_t *font, uint16_t co
 void st7735_print(st7735_t *dev, const st7735_font_t *font, uint16_t color, bool transparent, const char *str);
 uint8_t st7735_char_width(const st7735_font_t *font, unsigned int c, bool offset);
 uint16_t st7735_str_width(const st7735_font_t *font, const char *str);
+int st7735_draw_qrcode(st7735_t *dev, const char *text, const uint16_t color, const uint16_t background);
 
 #ifdef __cplusplus
 }

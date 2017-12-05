@@ -24,6 +24,7 @@
 #include "periph/gpio.h"
 #include "st7735.h"
 #include "st7735_internal.h"
+#include "qrcodegen.h"
 
 #define ENABLE_DEBUG        (0)
 #include "debug.h"
@@ -578,11 +579,16 @@ void st7735_draw_font_char(st7735_t *dev, const st7735_font_t *font, uint16_t co
         dev->cursor_y += font->line_space;
     }
 
-    if (dev->cursor_y >= dev->height) return;
-
     dev->cursor_x += delta;
 
     int32_t origin_y = dev->cursor_y + font->cap_height - height - yoffset;
+    if (origin_y + (int)height > dev->height) {
+        if (!dev->textwrap) return;
+        origin_y = 0;
+        if (yoffset >= 0) dev->cursor_y = 0;
+        else dev->cursor_y = -yoffset;
+    }
+
     int32_t linecount = height;
     uint32_t y = origin_y;
     while (linecount) {
@@ -666,4 +672,49 @@ uint16_t st7735_str_width(const st7735_font_t *font, const char *str)
     }
 
     return str_width;
+}
+
+int st7735_draw_qrcode(st7735_t *dev, const char *text, const uint16_t color, const uint16_t background)
+{
+    enum qrcodegen_Ecc errCorLvl = qrcodegen_Ecc_LOW;  // Error correction level
+    int maxVersion = 4;
+
+    uint8_t qrcode[qrcodegen_BUFFER_LEN_FOR_VERSION(maxVersion)];
+    uint8_t tempBuffer[qrcodegen_BUFFER_LEN_FOR_VERSION(maxVersion)];
+
+    bool ok = qrcodegen_encodeText(text, tempBuffer, qrcode, errCorLvl,
+        qrcodegen_VERSION_MIN, maxVersion, qrcodegen_Mask_AUTO, true);
+    
+    if (!ok)
+        return -1;
+
+    uint16_t *fb = (uint16_t*)framebuffer;
+    int size = qrcodegen_getSize(qrcode);
+    int scale = 3;
+
+    // verify QR code fits on screen
+    if (dev->cursor_x + size*scale > dev->width || dev->cursor_y + size*scale > dev->height)
+        return -1;
+
+    // copy QR code in framebuffer at desired scale
+    int x, y, xx, yy;
+    uint16_t pixel;
+    for (y = 0; y < size; y++) {
+        for (x = 0; x < size; x++) {
+            pixel = (qrcodegen_getModule(qrcode, x, y) ? color : background);
+            for (yy = 0; yy < scale; yy++) {
+                for (xx = 0; xx < scale; xx++) {
+                    fb[((y*size*scale*scale)+(yy*size*scale))+((x*scale)+xx)] = pixel;
+                }
+            }
+        }
+    }
+
+    // push framebuffer
+    st7735_set_addr_window(dev, dev->cursor_x, dev->cursor_y, dev->cursor_x+size*scale-1, dev->cursor_y+size*scale-1);
+    st7735_push_frame(dev, size*size*scale*scale);
+
+    dev->cursor_y += size;
+
+    return 0;
 }
