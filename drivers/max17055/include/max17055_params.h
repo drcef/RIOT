@@ -31,15 +31,27 @@ extern "C" {
  * @{
  */
 #ifndef MAX17055_PARAM_I2C
-#define MAX17055_PARAM_I2C       (I2C_DEV(0))
+#define MAX17055_PARAM_I2C		(I2C_DEV(0))
 #endif
 #ifndef MAX17055_PARAM_ADDR
-#define MAX17055_PARAM_ADDR      (MAX17055_I2C_ADDRESS)
+#define MAX17055_PARAM_ADDR		(MAX17055_I2C_ADDRESS)
+#endif
+#ifndef MAX17055_PARAM_CAPACITY
+#define MAX17055_PARAM_CAPACITY	(800U)
+#endif
+#ifndef MAX17055_PARAM_RSENSE
+#define MAX17055_PARAM_RSENSE	(10U)
+#endif
+#ifndef MAX17055_PARAM_ICHGTERM
+#define MAX17055_PARAM_ICHGTERM	(50U)
 #endif
 
 #ifndef MAX17055_PARAMS
-#define MAX17055_PARAMS          { .i2c    = MAX17055_PARAM_I2C, \
-								  .addr   = MAX17055_PARAM_ADDR }
+#define MAX17055_PARAMS          { .i2c     = MAX17055_PARAM_I2C, \
+								  .addr     = MAX17055_PARAM_ADDR, \
+								  .capacity = MAX17055_PARAM_CAPACITY, \
+								  .rsense	= MAX17055_PARAM_RSENSE, \
+								  .ichgterm = MAX17055_PARAM_ICHGTERM }
 #endif
 /**@}*/
 

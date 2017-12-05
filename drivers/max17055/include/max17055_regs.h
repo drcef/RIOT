@@ -97,6 +97,8 @@ extern "C"
 #define MAX17055_REG_VFREMCAP		0x4A
 #define MAX17055_REG_QH				0x4D
 
+#define MAX17055_REG_SOFT_WAKEUP	0x60
+
 #define MAX17055_REG_STATUS2		0xB0
 #define MAX17055_REG_POWER			0xB1
 #define MAX17055_REG_ID				0xB2
@@ -133,14 +135,23 @@ extern "C"
  * @name    Register mask definitions
  * @{
  */
+#define MAX17055_STATUS_POR			0x0002
 
+#define MAX17055_FSTAT_DNR			0x0001
+
+#define MAX17055_HIBCFG_ENHIB		0x8000
+
+#define MAX17055_MODELCFG_REFRESH	0x8000
+
+#define MAX17055_SOFT_WAKEUP_CLEAR	0x0000
+#define MAX17055_SOFT_WAKEUP_SET	0x0090
 /** @} */
 
 /**
- * @name    Command definitions
+ * @name    Magic values (refer to datasheet)
  * @{
  */
-
+#define MAX17055_HIBCFG_VAL			0x070C
 /** @} */
 
 #ifdef __cplusplus
