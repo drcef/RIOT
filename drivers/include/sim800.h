@@ -43,18 +43,46 @@ enum {
 	SIM800_TCP_WRONGCONNECT	= -16,
 	SIM800_TCP_NOSEND		= -17,
 	SIM800_TCP_WRONGSEND	= -18,
-	SIM800_BAUD_ERROR		= -19
+	SIM800_BAUD_ERROR		= -19,
+	SIM800_FORMAT_ERROR		= -20,
+	SIM800_OPERATOR_ERROR	= -21,
+	SIM800_NO_PROMPT		= -22,
+	SIM800_NO_IP			= -23,
+	SIM800_NO_OPERATOR		= -24,
+	SIM800_IN_FLIGHT_MODE	= -25,
+	SIM800_INVALID_MODE		= -26,
+	SIM800_WRITE_ERROR		= -27,
+	SIM800_OVERFLOW			= -28,
+	SIM800_TCP_TIMEOUT		= -29,
+	SIM800_ERASE_ERROR		= -30,
+	SIM800_SEEK_ERROR		= -31,
+	SIM800_SEQUENCE_OVF		= -32,
+	SIM800_TCP_NOCIPCLOSE	= -33,
+	SIM800_FILE_READ_ERROR	= -34,
+};
+
+enum {
+	SIM800_WRITE_TO_RAM,
+	SIM800_WRITE_TO_FILE,
+	SIM800_READ_FROM_RAM,
+	SIM800_READ_FROM_FILE,
 };
 
 int sim800_status(sim800_t *dev);
 int sim800_rssi(sim800_t *dev);
 int sim800_set_apn(sim800_t *dev, const char *apn, const char *user, const char *password);
 int sim800_init(sim800_t *dev, uint8_t uart);
+int sim800_operator_name(sim800_t *dev, char *name);
 int sim800_attach(sim800_t *dev);
 int sim800_detach(sim800_t *dev);
 int sim800_gprs_connect(sim800_t *dev);
 int sim800_gprs_disconnect(sim800_t *dev);
 int sim800_powerdown(sim800_t *dev);
-int sim800_http(sim800_t *dev, const char* host, uint16_t port, const char *request, char *response, uint16_t size);
+int sim800_http(sim800_t *dev,
+	const char* host, uint16_t port,
+	const char *req_head, void *req_body,
+	char *res_head, void *res_body,
+	int req_mode, int res_mode,
+	int head_maxsize, int body_maxsize);
 
 #endif /* SIM800_H */

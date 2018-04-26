@@ -144,23 +144,21 @@ int st7735_init(st7735_t *dev, spi_t spi, gpio_t cs, gpio_t reset, gpio_t mode)
     DEBUG("done initializing SPI master\n");
     
     /* reset display */
+    //gpio_clear(reset);
+    //xtimer_usleep(20 * 1000U);
     gpio_set(reset);
-    xtimer_usleep(20 * 1000U);
-    gpio_clear(reset);
-    xtimer_usleep(20 * 1000U);
-    gpio_set(reset);
-    xtimer_usleep(20 * 1000U);
+    //xtimer_usleep(20 * 1000U);
 
     /* acquire SPI */
     lock(dev);
 
     /* software reset */
     _writecommand(dev, ST7735_SWRESET);
-    xtimer_usleep(10 * 1000U);
+    xtimer_usleep(500U);
 
     /* out of sleep mode */
     _writecommand(dev, ST7735_SLPOUT);
-    xtimer_usleep(10 * 1000U);
+    xtimer_usleep(500U);
 
     /* frame rate control - normal mode*/
     _writecommand(dev, ST7735_FRMCTR1);
@@ -270,11 +268,11 @@ int st7735_init(st7735_t *dev, spi_t spi, gpio_t cs, gpio_t reset, gpio_t mode)
 
     /* Normal display on */
     _writecommand(dev, ST7735_NORON);
-    xtimer_usleep(10 * 1000U);
+    xtimer_usleep(500U);
 
     /* Main screen turn on */
     _writecommand(dev, ST7735_DISPON);
-    xtimer_usleep(10 * 1000U);
+    xtimer_usleep(500U);
 
     /* release SPI */
     done(dev);

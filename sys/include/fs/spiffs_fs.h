@@ -55,7 +55,7 @@ extern "C" {
  * larger than the logical page size. The more ram, the more cache pages,
  * the quicker the system.
  */
-#define SPIFFS_FS_CACHE_SIZE (512)
+#define SPIFFS_FS_CACHE_SIZE (1700)
 #else
 #define SPIFFS_FS_CACHE_SIZE (0)
 #endif /* SPIFFS_CACHE */
